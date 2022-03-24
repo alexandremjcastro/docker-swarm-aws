@@ -1,0 +1,48 @@
+- name: install libs
+  apt: 
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3-pip
+      - virtualenv
+      - python3-setuptools
+    state: present 
+    update_cache: yes
+
+- name: install apt key
+  apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+- name: Add Docker Repository
+  apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu bionic stable
+      state: present
+
+- name: install docker
+  apt:
+    name: docker-ce
+    state: present
+
+- name: install docker module for python
+  pip:
+    name: docker
+    state: present
+
+- name: install jsondiff
+  pip:
+    name: jsondiff
+    state: present
+
+- name: install docker-compose
+  apt:
+    name: docker-compose
+    state: present
+
+- name: install nfs-common
+  apt:
+    name: nfs-common
+    state: present

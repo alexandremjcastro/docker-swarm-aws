@@ -1,0 +1,15 @@
+---
+- name: Init a new swarm with default parameters
+  docker_swarm:
+    state: present
+  register: init_swarm
+
+- name: "set fact: join token worker"
+  set_fact:
+    join_token_worker: "{{ init_swarm.swarm_facts.JoinTokens.Worker }}"
+
+- name: "set fact: join token manager"
+  set_fact:
+    join_token_manager: "{{ init_swarm.swarm_facts.JoinTokens.Manager }}"
+
+

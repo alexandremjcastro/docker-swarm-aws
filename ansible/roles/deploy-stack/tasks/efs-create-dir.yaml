@@ -1,0 +1,36 @@
+- name: Mount EFS to create persistence directories
+  when: inventory_hostname == groups['manager'][0]
+  mount:
+    name: /mnt
+    src: "{{ efs_hostname }}:/"
+    fstype: nfs4
+    opts: nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport
+    state: mounted
+
+- name: Creating DB data storage directory
+  when: inventory_hostname == groups['manager'][0]
+  shell: mkdir -p /mnt/db
+
+- name: Creating application settings storage directory
+  when: inventory_hostname == groups['manager'][0]
+  shell: mkdir -p /mnt/app/conf && mkdir -p /mnt/app/www
+
+- name: Copy the index.php to the remote host
+  when: inventory_hostname == groups['manager'][0]
+  template:
+    src: index.php
+    dest: /mnt/app/www/index.php
+    mode: 0775
+
+- name: Copy the php.ini to the remote host
+  when: inventory_hostname == groups['manager'][0]
+  template:
+    src: php.ini
+    dest: /mnt/app/conf/php.ini
+    mode: 0775
+
+- name: Unmounting EFS directory
+  when: inventory_hostname == groups['manager'][0]
+  mount:
+    path: /mnt
+    state: unmounted

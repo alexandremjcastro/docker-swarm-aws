@@ -1,0 +1,26 @@
+- name: Create docker-compose stack file
+  when: inventory_hostname == groups['manager'][0]
+  template:
+    src: docker-stack.j2
+    dest: /opt/docker-stack.yml
+    mode: 0775
+
+- name: Create secret db-pass
+  docker_secret:
+    name: db-pass
+    data: "{{ db_pass }}"
+    state: present
+
+- name: Create secret db-root-pass
+  docker_secret:
+    name: db-root-pass
+    data: "{{ db_root_pass }}"
+    state: present
+
+- name: Deploy stack from a compose file
+  when: inventory_hostname == groups['manager'][0]
+  docker_stack:
+    state: present
+    name: apps
+    compose:
+      - /opt/docker-stack.yml

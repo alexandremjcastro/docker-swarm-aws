@@ -1,0 +1,3 @@
+---
+- include: efs-create-dir.yaml
+- include: apps.yaml

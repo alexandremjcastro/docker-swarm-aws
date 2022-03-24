@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  reverse-proxy:
+    image: traefik:2.2
+    command:
+      #- "--log.level=debug"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.swarmMode=true"
+      - "--entrypoints.web.address=:80"
+      - "--providers.docker.exposedByDefault=false"
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - "{{ traefik_network_name }}"
+    deploy:
+      labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.http.entrypoints=web"
+      - "traefik.http.services.http.loadbalancer.server.port=80"
+      mode: global
+      placement:
+        constraints: [node.role == manager]
+
+  mysql:
+    image: mysql:5.7
+    command: [ "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--max-allowed-packet=67108864" ]
+    volumes:
+      - db:/var/lib/mysql
+    secrets:
+      - db-pass
+      - db-root-pass
+    environment:
+      - LANG=C.UTF-8
+      - MYSQL_USER={{ db_user }}
+      - MYSQL_DATABASE={{ db_database_name }}
+      - MYSQL_PASSWORD_FILE=/run/secrets/db-pass
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-root-pass
+    networks:
+      - {{ apps_network_name }}
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+      labels:
+        - "traefik.enable=false"
+
+  web-app:
+    image: {{ apps_image_name }}
+    networks:
+      - {{ apps_network_name }}
+      - {{ traefik_network_name }}
+    volumes:
+      - "app-conf:/usr/local/etc/php"
+      - "app-www:/var/www/html"
+    depends_on:
+      - mysql
+    deploy:
+      replicas: 10
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.port=80"
+        - "traefik.http.routers.app.rule=Host(`{{ apps_domain }}`)"
+        - "traefik.http.services.app.loadbalancer.server.port=80"
+        - "traefik.http.routers.app.entrypoints=web"
+        - "traefik.docker.network=web"
+
+networks:
+  {{ traefik_network_name }}:
+    driver: overlay
+    attachable: true
+    name: {{ traefik_network_name }}
+  {{ apps_network_name }}:
+    driver: overlay
+    attachable: true
+    name: {{ apps_network_name }}
+
+secrets:
+  traefik-pass:
+    external: true
+  db-pass:
+    external: true
+  db-root-pass:
+    external: true
+
+volumes:
+  db:
+    driver_opts:
+      type: nfs
+      o: "addr={{ efs_hostname }},rw,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+      device: ":/db"
+  app-conf:
+    driver_opts:
+      type: nfs
+      o: "addr={{ efs_hostname }},rw,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+      device: ":/app/conf"
+  app-www:
+    driver_opts:
+      type: nfs
+      o: "addr={{ efs_hostname }},rw,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+      device: ":/app/www"

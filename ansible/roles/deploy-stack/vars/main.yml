@@ -1,0 +1,9 @@
+# vars file custom for deploy-app
+traefik_network_name: web # Nome da placa de rede do traefik
+db_user: swarm # Usuário comum a ser criado dentro do banco
+db_database_name: "swarmdb" # Nome da database a ser criada
+db_pass: Mudar@1234 # Senha do usuário comum do banco. A senha será armazenada dentro do docker secret
+db_root_pass: Mudar@12345678 # Senha do usuário root do banco. A senha será armazenada dentro do docker secret
+apps_domain: "dominio.exemplo.com" # Domínio da aplicação
+apps_network_name: internal # Nome da placa de rede que liga o container do banco a aplicação
+apps_image_name: "alexandremjcastro/php56-mysql-apache:1.0" # Imagem docker com Apache e PHP 5.6
