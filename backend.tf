@@ -6,7 +6,7 @@ terraform {
   }
   backend "s3" {
     bucket = "" # Nome do bucket para armazenar o arquivo de estado do terraform
-    key    = "" # Nome do arquivo de estado do terraform
+    key    = "nome-exemplo.tfstate" # Nome do arquivo de estado do terraform
     region = "us-east-1" # Região de provisionamento do ambiente
   }
 }
